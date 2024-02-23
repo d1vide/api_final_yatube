@@ -3,6 +3,9 @@ from django.db import models
 
 User = get_user_model()
 
+POST_TEXT_LENGTH_STR = 32
+COMMENT_TEXT_LENGTH_STR = 32
+
 
 class Group(models.Model):
     title = models.CharField(max_length=200)
@@ -29,8 +32,12 @@ class Post(models.Model):
         related_name='posts', blank=True, null=True
     )
 
+    class Meta:
+        verbose_name = 'пост'
+        verbose_name_plural = 'Посты'
+
     def __str__(self):
-        return self.text
+        return self.text[:POST_TEXT_LENGTH_STR]
 
 
 class Comment(models.Model):
@@ -42,9 +49,12 @@ class Comment(models.Model):
     created = models.DateTimeField(
         'Дата добавления', auto_now_add=True, db_index=True)
 
+    class Meta:
+        verbose_name = 'комментарий'
+        verbose_name_plural = 'Комментарии'
+
     def __str__(self):
-        text_length = 32
-        return self.text[:text_length]
+        return self.text[:COMMENT_TEXT_LENGTH_STR]
 
 
 class Follow(models.Model):
@@ -52,3 +62,16 @@ class Follow(models.Model):
         User, on_delete=models.CASCADE, related_name='follow')
     following = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='following')
+
+    class Meta:
+        verbose_name = 'подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = (
+            models.CheckConstraint(
+                check=models.Q(~models.Q(user=models.F('following'))),
+                name='cant_follow_on_yourself'
+            ),
+        )
+
+    def __str__(self):
+        return f'{self.user} - {self.following}'
